@@ -9,7 +9,7 @@ type ResultType<T, Errors extends never | Error = never> = Result<T, InternalSer
 export abstract class ProjectConnector {
   abstract getById(id: Project["id"], userId: UserId): Promise<ResultType<Project, Deno.errors.NotFound>>;
   abstract getAll(userId: UserId): Promise<ResultType<Project[]>>;
-  abstract create(project: Omit<Project, "id">, userId: UserId): Promise<ResultType<Project, AlreadyExists>>;
+  abstract create(project: Omit<Project, "id">, userId: UserId): Promise<ResultType<void, AlreadyExists>>;
   abstract update(project: Project, userId: UserId): Promise<ResultType<void>>;
   abstract delete(id: Project["id"]): Promise<ResultType<void>>;
 }

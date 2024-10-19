@@ -17,11 +17,7 @@ abstract class UserConnectorMock implements UserConnector {
   async getByEmail(
     _email: string
   ): Promise<Result<User & { hashedPassword: HashedPassword }, Error>> {
-    return ok({
-      id: "1",
-      email: "email",
-      hashedPassword: "hashedPassword" as HashedPassword,
-    });
+    return ok({} as User & { hashedPassword: HashedPassword });
   }
 
   async create(_user: Parameters<UserConnector["create"]>[0]) {

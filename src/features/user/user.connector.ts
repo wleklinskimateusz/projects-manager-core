@@ -1,5 +1,5 @@
 import type { Result } from "neverthrow";
-import type { User } from "./user.model.ts";
+import type { User, UserId } from "./user.model.ts";
 import type { HashedPassword } from "./password.service.ts";
 import type { InternalServerError } from "../../errors/internal-server-error.ts";
 import type { AlreadyExists } from "../../errors/already-exists.ts";
@@ -16,5 +16,5 @@ export interface UserConnector {
 
   create: (
     user: Omit<User, "id"> & { hashedPassword: HashedPassword },
-  ) => Promise<Result<User, AlreadyExists | InternalServerError>>;
+  ) => Promise<Result<UserId, AlreadyExists | InternalServerError>>;
 }

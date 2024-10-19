@@ -19,8 +19,8 @@ abstract class UserConnectorMock implements UserConnector {
 
   async create(
     _user: Parameters<UserConnector["create"]>[0],
-  ): Promise<Result<User, InternalServerError | AlreadyExists>> {
-    return ok({} as User);
+  ): Promise<Result<UserId, InternalServerError | AlreadyExists>> {
+    return ok("123" as UserId);
   }
 }
 
@@ -149,14 +149,15 @@ describe("UserService", () => {
 
         if (exists) return err(new AlreadyExists());
 
+        const id = uuid.generate() as UserId;
         const userWithId = {
           ...user,
-          id: uuid.generate() as UserId,
+          id,
         };
 
         this.users.push(userWithId);
 
-        return ok((await this.getByEmail(user.email))._unsafeUnwrap());
+        return ok(id);
       }
     }
 

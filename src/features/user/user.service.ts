@@ -1,6 +1,6 @@
 import { err, ok, type Result } from "neverthrow";
 import type { UserConnector } from "./user.connector.ts";
-import type { User } from "./user.model.ts";
+import type { User, UserId } from "./user.model.ts";
 import { PasswordService } from "./password.service.ts";
 
 export class WrongPassword extends Error {
@@ -34,7 +34,7 @@ export class UserService {
     return ok(userWithoutPassword);
   }
 
-  register(email: string, password: string): Promise<Result<User, Error>> {
+  register(email: string, password: string): Promise<Result<UserId, Error>> {
     const hashResult = PasswordService.hash(password);
 
     if (hashResult.isErr()) return Promise.resolve(err(hashResult.error));

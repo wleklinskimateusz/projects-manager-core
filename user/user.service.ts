@@ -1,5 +1,5 @@
 import { err, ok, type Result } from "neverthrow";
-import type { UserConnector } from "./user.connector.ts";
+import { EmailAlreadyExsists, type UserConnector } from "./user.connector.ts";
 import type { User } from "./user.model.ts";
 import { PasswordService } from "./password.service.ts";
 
@@ -38,12 +38,6 @@ export class UserService {
     email: string,
     password: string
   ): Promise<Result<User, Error>> {
-    const user = await this.userConnector.getByEmail(email);
-
-    if (user.isOk()) {
-      return err(new Error("Email already exists"));
-    }
-
     const hashedPassword = PasswordService.hash(password)._unsafeUnwrap();
 
     return this.userConnector.create({ email, hashedPassword });

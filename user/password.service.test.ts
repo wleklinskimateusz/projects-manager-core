@@ -38,4 +38,10 @@ describe("PasswordService", () => {
 
     expect(verifyResult.value).toBe(false);
   });
+
+  it("should return error if wrong hash is passed", () => {
+    const verifyResult = PasswordService.verify("wrong-hash", "password");
+
+    expect(verifyResult.isErr()).toBe(true);
+  });
 });

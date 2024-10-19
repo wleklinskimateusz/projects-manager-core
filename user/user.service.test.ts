@@ -118,5 +118,18 @@ describe("UserService", () => {
 
       if (result.isErr()) throw new Error("User should be created");
     });
+
+    it("should return an error if user already exists", async () => {
+      const userConnector = new UserConnectorFake([
+        { id: "1", email: "email", hashedPassword: "password" },
+      ]);
+      const userService = new UserService(userConnector);
+      const result = await userService.register("email", "different password");
+
+      if (result.isOk()) throw new Error("User should not be created");
+
+      expect(result.error).toBeInstanceOf(EmailAlreadyExsists);
+      expect(result.error.name).toBe("EmailAlreadyExists");
+    });
   });
 });

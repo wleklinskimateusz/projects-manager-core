@@ -1,8 +1,8 @@
 import { hash, verify } from "@ts-rex/bcrypt";
 import { err, ok, type Result } from "neverthrow";
-import type { z } from "zod";
+import type { Brand } from "../../types/brand.ts";
 
-export type HashedPassword = string & z.BRAND<"HashedPassword">;
+export type HashedPassword = Brand<string, "HashedPassword">;
 
 export class WrongHash extends Error {
   constructor() {

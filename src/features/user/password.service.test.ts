@@ -1,10 +1,5 @@
 import { describe, it } from "@std/testing/bdd";
-import {
-  EmptyPassword,
-  PasswordService,
-  WrongHash,
-  type HashedPassword,
-} from "./password.service.ts";
+import { EmptyPassword, type HashedPassword, PasswordService, WrongHash } from "./password.service.ts";
 import { expect } from "jsr:@std/expect";
 
 describe("PasswordService", () => {
@@ -23,7 +18,7 @@ describe("PasswordService", () => {
 
     const verifyResult = PasswordService.verify(
       hashedPassword.value,
-      "password"
+      "password",
     );
 
     if (verifyResult.isErr()) throw new Error("Password should be verified");
@@ -38,7 +33,7 @@ describe("PasswordService", () => {
 
     const verifyResult = PasswordService.verify(
       hashedPassword.value,
-      "wrong-password"
+      "wrong-password",
     );
 
     if (verifyResult.isErr()) throw new Error("Password should be verified");
@@ -49,7 +44,7 @@ describe("PasswordService", () => {
   it("should return error if wrong hash is passed", () => {
     const verifyResult = PasswordService.verify(
       "wrong-hash" as HashedPassword,
-      "password"
+      "password",
     );
 
     if (verifyResult.isOk()) throw new Error("Password should be verified");

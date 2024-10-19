@@ -15,7 +15,7 @@ export class UserService {
 
   async authenticate(
     email: string,
-    password: string
+    password: string,
   ): Promise<Result<User, Error>> {
     const user = await this.userConnector.getByEmail(email);
 

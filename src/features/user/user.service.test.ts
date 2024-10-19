@@ -3,30 +3,23 @@ import { describe, it } from "jsr:@std/testing/bdd";
 import { expect } from "jsr:@std/expect";
 import { UserService, WrongPassword } from "./user.service.ts";
 import { err, ok, type Result } from "neverthrow";
-import {
-  EmailAlreadyExsists,
-  InternalServerError,
-  type UserConnector,
-} from "./user.connector.ts";
-import {
-  EmptyPassword,
-  PasswordService,
-  WrongHash,
-  type HashedPassword,
-} from "./password.service.ts";
-import type { User } from "./user.model.ts";
-import * as uuid from "jsr:@std/uuid";
+import { InternalServerError } from "../../errors/internal-server-error.ts";
+import type { UserConnector } from "./user.connector.ts";
+import { EmptyPassword, type HashedPassword, PasswordService, WrongHash } from "./password.service.ts";
+import type { User, UserId } from "./user.model.ts";
+import { v1 as uuid } from "jsr:@std/uuid";
+import { AlreadyExists } from "../../errors/already-exists.ts";
 
 abstract class UserConnectorMock implements UserConnector {
   async getByEmail(
-    _email: string
+    _email: string,
   ): Promise<Result<User & { hashedPassword: HashedPassword }, Error>> {
     return ok({} as User & { hashedPassword: HashedPassword });
   }
 
   async create(
-    _user: Parameters<UserConnector["create"]>[0]
-  ): Promise<Result<User, InternalServerError | EmailAlreadyExsists>> {
+    _user: Parameters<UserConnector["create"]>[0],
+  ): Promise<Result<User, InternalServerError | AlreadyExists>> {
     return ok({} as User);
   }
 }
@@ -37,12 +30,11 @@ describe("UserService", () => {
       const password = "password";
       const hashedPassword = PasswordService.hash(password)._unsafeUnwrap();
 
-      class ValidUserConnector
-        extends UserConnectorMock
-        implements UserConnector
-      {
+      class ValidUserConnector extends UserConnectorMock implements UserConnector {
         override getByEmail(email: string) {
-          return Promise.resolve(ok({ id: "1", email, hashedPassword }));
+          return Promise.resolve(
+            ok({ id: "1" as UserId, email, hashedPassword }),
+          );
         }
       }
 
@@ -50,8 +42,9 @@ describe("UserService", () => {
       const userService = new UserService(userConnector);
       const result = await userService.authenticate("email", password);
 
-      if (result.isErr())
+      if (result.isErr()) {
         throw new Error("User should be authenticated", result.error);
+      }
 
       expect(result.value).toEqual({
         id: expect.any(String),
@@ -65,7 +58,9 @@ describe("UserService", () => {
 
       class InvalidUserConnector extends UserConnectorMock {
         override getByEmail(email: string) {
-          return Promise.resolve(ok({ id: "1", email, hashedPassword }));
+          return Promise.resolve(
+            ok({ id: "1" as UserId, email, hashedPassword }),
+          );
         }
       }
 
@@ -98,7 +93,7 @@ describe("UserService", () => {
       class InvalidHashUserConnector extends UserConnectorMock {
         override async getByEmail(_email: string) {
           return ok({
-            id: "1",
+            id: "1" as UserId,
             email: "email",
             hashedPassword: "invalid-hash" as HashedPassword,
           });
@@ -136,7 +131,7 @@ describe("UserService", () => {
   describe("register", () => {
     class UserConnectorFake implements UserConnector {
       constructor(
-        private users: (User & { hashedPassword: HashedPassword })[] = []
+        private users: (User & { hashedPassword: HashedPassword })[] = [],
       ) {}
 
       async getByEmail(email: string) {
@@ -148,15 +143,15 @@ describe("UserService", () => {
       }
 
       async create(
-        user: Omit<User, "id"> & { hashedPassword: HashedPassword }
+        user: Omit<User, "id"> & { hashedPassword: HashedPassword },
       ) {
         const exists = this.users.some((u) => u.email === user.email);
 
-        if (exists) return err(new EmailAlreadyExsists());
+        if (exists) return err(new AlreadyExists());
 
         const userWithId = {
           ...user,
-          id: uuid.v1.generate(),
+          id: uuid.generate() as UserId,
         };
 
         this.users.push(userWithId);
@@ -176,7 +171,7 @@ describe("UserService", () => {
     it("should return an error if user already exists", async () => {
       const userConnector = new UserConnectorFake([
         {
-          id: "1",
+          id: "1" as UserId,
           email: "email",
           hashedPassword: "password" as HashedPassword,
         },
@@ -186,7 +181,7 @@ describe("UserService", () => {
 
       if (result.isOk()) throw new Error("User should not be created");
 
-      expect(result.error).toBeInstanceOf(EmailAlreadyExsists);
+      expect(result.error).toBeInstanceOf(AlreadyExists);
     });
 
     it("should return an error if password is empty", async () => {

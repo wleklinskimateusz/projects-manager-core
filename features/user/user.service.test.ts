@@ -3,7 +3,11 @@ import { describe, it } from "jsr:@std/testing/bdd";
 import { expect } from "jsr:@std/expect";
 import { UserService, WrongPassword } from "./user.service.ts";
 import { err, ok, type Result } from "neverthrow";
-import { EmailAlreadyExsists, type UserConnector } from "./user.connector.ts";
+import {
+  EmailAlreadyExsists,
+  InternalServerError,
+  type UserConnector,
+} from "./user.connector.ts";
 import {
   EmptyPassword,
   PasswordService,
@@ -20,7 +24,9 @@ abstract class UserConnectorMock implements UserConnector {
     return ok({} as User & { hashedPassword: HashedPassword });
   }
 
-  async create(_user: Parameters<UserConnector["create"]>[0]) {
+  async create(
+    _user: Parameters<UserConnector["create"]>[0]
+  ): Promise<Result<User, InternalServerError | EmailAlreadyExsists>> {
     return ok({} as User);
   }
 }
@@ -107,37 +113,58 @@ describe("UserService", () => {
 
       expect(result.error).toBeInstanceOf(WrongHash);
     });
+
+    it("should pass an error from connector", async () => {
+      const errorMessage = "something went wrong";
+      class ErrorUserConnector extends UserConnectorMock {
+        override async getByEmail() {
+          return err(new InternalServerError(errorMessage));
+        }
+      }
+
+      const userConnector = new ErrorUserConnector();
+      const userService = new UserService(userConnector);
+      const result = await userService.authenticate("email", "password");
+
+      if (result.isOk()) throw new Error("User should not be authenticated");
+
+      expect(result.error).toBeInstanceOf(InternalServerError);
+      expect(result.error.message).toBe(errorMessage);
+    });
   });
 
-  class UserConnectorFake implements UserConnector {
-    constructor(
-      private users: (User & { hashedPassword: HashedPassword })[] = []
-    ) {}
-
-    async getByEmail(email: string) {
-      const user = this.users.find((u) => u.email === email);
-
-      if (!user) return err(new Deno.errors.NotFound("user not found"));
-
-      return ok(user);
-    }
-
-    async create(user: Omit<User, "id"> & { hashedPassword: HashedPassword }) {
-      const exists = this.users.some((u) => u.email === user.email);
-
-      if (exists) return err(new EmailAlreadyExsists());
-
-      const userWithId = {
-        ...user,
-        id: uuid.v1.generate(),
-      };
-
-      this.users.push(userWithId);
-
-      return ok((await this.getByEmail(user.email))._unsafeUnwrap());
-    }
-  }
   describe("register", () => {
+    class UserConnectorFake implements UserConnector {
+      constructor(
+        private users: (User & { hashedPassword: HashedPassword })[] = []
+      ) {}
+
+      async getByEmail(email: string) {
+        const user = this.users.find((u) => u.email === email);
+
+        if (!user) return err(new Deno.errors.NotFound("user not found"));
+
+        return ok(user);
+      }
+
+      async create(
+        user: Omit<User, "id"> & { hashedPassword: HashedPassword }
+      ) {
+        const exists = this.users.some((u) => u.email === user.email);
+
+        if (exists) return err(new EmailAlreadyExsists());
+
+        const userWithId = {
+          ...user,
+          id: uuid.v1.generate(),
+        };
+
+        this.users.push(userWithId);
+
+        return ok((await this.getByEmail(user.email))._unsafeUnwrap());
+      }
+    }
+
     it("should create a user", async () => {
       const userConnector = new UserConnectorFake();
       const userService = new UserService(userConnector);
@@ -170,6 +197,24 @@ describe("UserService", () => {
       if (result.isOk()) throw new Error("User should not be created");
 
       expect(result.error).toBeInstanceOf(EmptyPassword);
+    });
+
+    it("should pass an error from connector", async () => {
+      const errorMessage = "something went wrong";
+      class ErrorUserConnector extends UserConnectorMock {
+        override async create() {
+          return err(new InternalServerError(errorMessage));
+        }
+      }
+
+      const userConnector = new ErrorUserConnector();
+      const userService = new UserService(userConnector);
+      const result = await userService.register("email", "password");
+
+      if (result.isOk()) throw new Error("User should not be created");
+
+      expect(result.error).toBeInstanceOf(InternalServerError);
+      expect(result.error.message).toBe(errorMessage);
     });
   });
 });

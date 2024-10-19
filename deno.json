@@ -1,6 +1,7 @@
 {
   "tasks": {
-    "dev": "deno run --watch main.ts"
+    "dev": "deno run --watch main.ts",
+    "test-coverage": "rm -rf coverage && deno test --coverage && deno coverage --detailed"
   },
   "name": "@projects-manager/core",
   "version": "0.0.3",

@@ -14,7 +14,8 @@
     "jsr:@std/testing@^1.0.3": "1.0.3",
     "jsr:@std/uuid@*": "1.0.4",
     "jsr:@ts-rex/bcrypt@^1.0.3": "1.0.3",
-    "npm:neverthrow@8": "8.0.0"
+    "npm:neverthrow@8": "8.0.0",
+    "npm:zod@^3.23.8": "3.23.8"
   },
   "jsr": {
     "@std/assert@1.0.6": {
@@ -75,6 +76,9 @@
   "npm": {
     "neverthrow@8.0.0": {
       "integrity": "sha512-SX2Z50+U27I+CF3NwHE9J8MB6+bYRRub3U+1nAKxnL6c+2vW2l/WsYEC0e3Wqg8DwiJvrquqE0YhxlVTzGJGsg=="
+    },
+    "zod@3.23.8": {
+      "integrity": "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="
     }
   },
   "workspace": {
@@ -82,7 +86,8 @@
       "jsr:@std/assert@1",
       "jsr:@std/testing@^1.0.3",
       "jsr:@ts-rex/bcrypt@^1.0.3",
-      "npm:neverthrow@8"
+      "npm:neverthrow@8",
+      "npm:zod@^3.23.8"
     ]
   }
 }

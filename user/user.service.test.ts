@@ -4,15 +4,24 @@ import { expect } from "jsr:@std/expect";
 import { UserService, WrongPassword } from "./user.service.ts";
 import { err, ok, type Result } from "neverthrow";
 import { EmailAlreadyExsists, type UserConnector } from "./user.connector.ts";
-import { PasswordService } from "./password.service.ts";
+import {
+  EmptyPassword,
+  PasswordService,
+  WrongHash,
+  type HashedPassword,
+} from "./password.service.ts";
 import type { User } from "./user.model.ts";
 import * as uuid from "jsr:@std/uuid";
 
 abstract class UserConnectorMock implements UserConnector {
   async getByEmail(
     _email: string
-  ): Promise<Result<User & { hashedPassword: string }, Error>> {
-    return ok({ id: "1", email: "email", hashedPassword: "hashedPassword" });
+  ): Promise<Result<User & { hashedPassword: HashedPassword }, Error>> {
+    return ok({
+      id: "1",
+      email: "email",
+      hashedPassword: "hashedPassword" as HashedPassword,
+    });
   }
 
   async create(_user: Parameters<UserConnector["create"]>[0]) {
@@ -80,12 +89,34 @@ describe("UserService", () => {
 
       if (result.isOk()) throw new Error("User should not be authenticated");
 
-      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error).toBeInstanceOf(Deno.errors.NotFound);
+    });
+
+    it("should return error if user connector returns invalid hash", async () => {
+      class InvalidHashUserConnector extends UserConnectorMock {
+        override async getByEmail(_email: string) {
+          return ok({
+            id: "1",
+            email: "email",
+            hashedPassword: "invalid-hash" as HashedPassword,
+          });
+        }
+      }
+
+      const userConnector = new InvalidHashUserConnector();
+      const userService = new UserService(userConnector);
+      const result = await userService.authenticate("email", "password");
+
+      if (result.isOk()) throw new Error("User should not be authenticated");
+
+      expect(result.error).toBeInstanceOf(WrongHash);
     });
   });
 
   class UserConnectorFake implements UserConnector {
-    constructor(private users: (User & { hashedPassword: string })[] = []) {}
+    constructor(
+      private users: (User & { hashedPassword: HashedPassword })[] = []
+    ) {}
 
     async getByEmail(email: string) {
       const user = this.users.find((u) => u.email === email);
@@ -95,7 +126,7 @@ describe("UserService", () => {
       return ok(user);
     }
 
-    async create(user: Omit<User, "id"> & { hashedPassword: string }) {
+    async create(user: Omit<User, "id"> & { hashedPassword: HashedPassword }) {
       const exists = this.users.some((u) => u.email === user.email);
 
       if (exists) return err(new EmailAlreadyExsists());
@@ -121,7 +152,11 @@ describe("UserService", () => {
 
     it("should return an error if user already exists", async () => {
       const userConnector = new UserConnectorFake([
-        { id: "1", email: "email", hashedPassword: "password" },
+        {
+          id: "1",
+          email: "email",
+          hashedPassword: "password" as HashedPassword,
+        },
       ]);
       const userService = new UserService(userConnector);
       const result = await userService.register("email", "different password");
@@ -129,7 +164,16 @@ describe("UserService", () => {
       if (result.isOk()) throw new Error("User should not be created");
 
       expect(result.error).toBeInstanceOf(EmailAlreadyExsists);
-      expect(result.error.name).toBe("EmailAlreadyExists");
+    });
+
+    it("should return an error if password is empty", async () => {
+      const userConnector = new UserConnectorFake();
+      const userService = new UserService(userConnector);
+      const result = await userService.register("email", "");
+
+      if (result.isOk()) throw new Error("User should not be created");
+
+      expect(result.error).toBeInstanceOf(EmptyPassword);
     });
   });
 });

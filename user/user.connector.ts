@@ -1,5 +1,6 @@
 import type { Result } from "neverthrow";
 import type { User } from "./user.model.ts";
+import type { HashedPassword } from "./password.service.ts";
 
 export class EmailAlreadyExsists extends Error {
   constructor() {
@@ -20,12 +21,12 @@ export interface UserConnector {
     email: string
   ) => Promise<
     Result<
-      User & { hashedPassword: string },
+      User & { hashedPassword: HashedPassword },
       InternalServerError | Deno.errors.NotFound
     >
   >;
 
   create: (
-    user: Omit<User, "id"> & { hashedPassword: string }
+    user: Omit<User, "id"> & { hashedPassword: HashedPassword }
   ) => Promise<Result<User, EmailAlreadyExsists | InternalServerError>>;
 }

@@ -1,12 +1,19 @@
 import { describe, it } from "@std/testing/bdd";
-import { PasswordService } from "./password.service.ts";
+import {
+  EmptyPassword,
+  PasswordService,
+  WrongHash,
+  type HashedPassword,
+} from "./password.service.ts";
 import { expect } from "jsr:@std/expect";
 
 describe("PasswordService", () => {
   it("shouldn't allow empty passwords", () => {
     const hashedPassword = PasswordService.hash("");
 
-    expect(hashedPassword.isErr()).toBe(true);
+    if (hashedPassword.isOk()) throw new Error("Password should be empty");
+
+    expect(hashedPassword.error).toBeInstanceOf(EmptyPassword);
   });
 
   it("should hash a password", () => {
@@ -40,8 +47,13 @@ describe("PasswordService", () => {
   });
 
   it("should return error if wrong hash is passed", () => {
-    const verifyResult = PasswordService.verify("wrong-hash", "password");
+    const verifyResult = PasswordService.verify(
+      "wrong-hash" as HashedPassword,
+      "password"
+    );
 
-    expect(verifyResult.isErr()).toBe(true);
+    if (verifyResult.isOk()) throw new Error("Password should be verified");
+
+    expect(verifyResult.error).toBeInstanceOf(WrongHash);
   });
 });

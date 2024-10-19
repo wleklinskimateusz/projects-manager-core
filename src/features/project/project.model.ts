@@ -1,6 +1,6 @@
 import type { Brand } from "../../types/brand.ts";
 
-export type ProjectId = Brand<string, "UserId">;
+export type ProjectId = Brand<string, "ProjectId">;
 
 export type Project = {
   id: ProjectId;

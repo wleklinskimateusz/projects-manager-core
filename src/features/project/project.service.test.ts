@@ -23,7 +23,7 @@ class ProjectConnectorMock extends ProjectConnector {
     return Promise.resolve(ok([this.project]));
   }
   override create(_project: Omit<Project, "id">, _userId: UserId): ReturnType<ProjectConnector["create"]> {
-    return Promise.resolve(ok(undefined));
+    return Promise.resolve(ok(this.project.id));
   }
   override update(_project: Project, _userId: UserId): ReturnType<ProjectConnector["update"]> {
     return Promise.resolve(ok(undefined));

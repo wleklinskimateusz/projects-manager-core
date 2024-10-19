@@ -24,7 +24,7 @@ export class PasswordService {
     return ok(hash(password) as HashedPassword);
   }
 
-  static verify(hashedPassword: HashedPassword, password: string) {
+  static verify(hashedPassword: HashedPassword, password: string): Result<boolean, WrongHash> {
     try {
       return ok(verify(password, hashedPassword));
     } catch (e) {

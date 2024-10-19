@@ -23,7 +23,7 @@ class ProjectConnectorMock extends ProjectConnector {
     return Promise.resolve(ok([this.project]));
   }
   override create(_project: Omit<Project, "id">, _userId: UserId): ReturnType<ProjectConnector["create"]> {
-    return Promise.resolve(ok(this.project));
+    return Promise.resolve(ok(undefined));
   }
   override update(_project: Project, _userId: UserId): ReturnType<ProjectConnector["update"]> {
     return Promise.resolve(ok(undefined));
@@ -53,14 +53,6 @@ describe("ProjectService", () => {
       const result = await projectService.create({ name: "Project", description: "Description" });
 
       if (result.isErr()) throw new Error("Project should be created");
-
-      expect(result.value).toEqual({
-        id: "1",
-        name: "Project",
-        description: "Description",
-        createdAt: expect.any(Date),
-        updatedAt: expect.any(Date),
-      });
 
       expect(wasCreated).toBe(true);
     });

@@ -3,8 +3,9 @@ import type { Project, ProjectId } from "./project.model.ts";
 import type { InternalServerError } from "../../errors/internal-server-error.ts";
 import type { UserId } from "../user/user.model.ts";
 import type { AlreadyExists } from "../../errors/already-exists.ts";
+import type { WrongId } from "../../errors/wrong-id.ts";
 
-type ResultType<T, Errors extends never | Error = never> = Result<T, InternalServerError | Errors>;
+type ResultType<T, Errors extends never | Error = never> = Result<T, InternalServerError | WrongId | Errors>;
 
 export abstract class ProjectConnector {
   abstract getById(id: Project["id"], userId: UserId): Promise<ResultType<Project, Deno.errors.NotFound>>;
